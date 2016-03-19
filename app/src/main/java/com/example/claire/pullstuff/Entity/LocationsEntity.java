@@ -19,7 +19,7 @@ public class LocationsEntity {
     private String type;
     private String facebook;
     private String twitter;
-    private Date timestamp;
+    private String timestamp;
 
 
     public String getCounty() {
@@ -110,11 +110,11 @@ public class LocationsEntity {
         this.twitter = twitter;
     }
 
-    public Date getLocationTimestamp() {
+    public String getLocationTimestamp() {
         return timestamp;
     }
 
-    public void setTimestamp(Date timestamp) {
+    public void setTimestamp(String timestamp) {
         this.timestamp = timestamp;
     }
 }

@@ -21,6 +21,8 @@ public class RealmLocationsEntity extends RealmObject {
     private String facebook;
     private String twitter;
     private Date timestamp;
+    public static final String FIELD_TIMESTAMP = "timestamp";
+
 
 
     public String getCounty() {
