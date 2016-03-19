@@ -116,9 +116,22 @@ public class RecentModel {
     }
 
     public void loadLocationData(){
-        RealmLocationsEntity myLocation = new RealmLocationsEntity();
+        //Set up date format that works with the API
+        DateFormat df = new SimpleDateFormat("yyyy-MM-dd kk:mm:ss");
 
-        Date newTime = myLocation.getTimestamp();
+        //pull the newest time from the DB (for county objects)
+        Date newTime = realm.where(RealmLocationsEntity.class).maximumDate(RealmLocationsEntity.FIELD_TIMESTAMP);
+
+        //In case there are currently no fields in the realm DB
+        if(newTime == null){
+            //If its null just set it to current time
+            try {
+                newTime = df.parse("2016-02-29 24:24:51");
+            }
+            catch (ParseException e){
+                Log.e("Parse Exception ", e.getMessage());
+            }
+        }
 
         Retrofit retrofit = new Retrofit.Builder()
                 .baseUrl(API)
@@ -127,19 +140,28 @@ public class RecentModel {
 
         RbApi apiService = retrofit.create(RbApi.class);
 
-        Call<LocationsEntity[]> call = apiService.getLocationTimestamp(newTime.toString());
-
+        //makes call to the API for everything past the timestamp
+        //Call<LocationsEntity[]> call = apiService.getLocationTimestamp(df.format(newTime));
+        Log.d("Bad String: ", df.format(newTime));
+        //hardcoding for testing
+        Call<LocationsEntity[]> call = apiService.getLocationTimestamp("2016-02-29 24:24:51");
         call.enqueue(new Callback<LocationsEntity[]>() {
 
             @Override
             public void onResponse(Call<LocationsEntity[]> call, Response<LocationsEntity[]> response) {
                 int statusCode = response.code();
+                //Log.d("Status Code: " + statusCode, "");
                 LocationsEntity[] locEntity = response.body();
 
-                //Create Realm Object
+                //The k for hour is 1-24 hours. ex: 01 is 12:00AM
+                DateFormat df = new SimpleDateFormat("yyyy-MM-dd kk:mm:ss");
 
-                for(int i = 0; i < locEntity.length; i++){
-                    realm.beginTransaction();
+                //Create Realm Object
+                if (locEntity == null) {
+                    //Do Nothing, since there's no new data to pull in
+                } else {
+                    for (int i = 0; i < locEntity.length; i++) {
+                        realm.beginTransaction();
                         RealmLocationsEntity realmLoc = realm.createObject(RealmLocationsEntity.class);
                         realmLoc.setCounty(locEntity[i].getCounty());
                         realmLoc.setName(locEntity[i].getName());
@@ -152,23 +174,28 @@ public class RecentModel {
                         realmLoc.setFacebook(locEntity[i].getFacebook());
                         realmLoc.setTwitter(locEntity[i].getTwitter());
                         realmLoc.setWebsite(locEntity[i].getWebsite());
-                        realmLoc.setTimestamp(locEntity[i].getLocationTimestamp());
-                    realm.commitTransaction();
+                        //try catch block for parsing timestamp into date object
+                        try {
+                            realmLoc.setTimestamp(df.parse(locEntity[i].getLocationTimestamp()));
+                        } catch (ParseException e) {
+                            Log.e("Parse Exception: ", e.getMessage());
+                        }
+                        realm.commitTransaction();
+                    }
                 }
             }
 
             @Override
             public void onFailure(Call<LocationsEntity[]> call, Throwable t) {
-
+                Log.e("Retrofit Failure: ", t.getMessage());
             }
-
         });
     }
-
+/*
     public void loadContacts(){
         RealmContactEntity myContact = new RealmContactEntity();
 
-        Date newTime = myContact.getTimestamp();
+        //Date newTime = myContact.getTimestamp();
 
         Retrofit retrofit = new Retrofit.Builder()
                 .baseUrl(API)
@@ -217,7 +244,7 @@ public class RecentModel {
 
         });
     }
-
+*/
 }
 
 
